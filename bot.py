@@ -8,17 +8,17 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
 def forward_to_admin(message):
-    # --- ЛОГГИРУЕМ ТИП СООБЩЕНИЯ ---
+    # --- ЛОГГИРУЕМ ТИП ---
     print(f"Получено сообщение от {message.from_user.id}, тип: {message.content_type}")
     
-    # --- ПЕРЕСЫЛАЕМ КОПИЮ СООБЩЕНИЯ (работает для всех типов) ---
+    # --- ПЕРЕСЫЛАЕМ ЧЕРЕЗ FORWARD (работает с любыми файлами) ---
     try:
-        bot.copy_message(ADMIN_ID, message.chat.id, message.message_id)
-    except Exception as e:
-        # Если copy_message не сработал — пробуем forward_message
         bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
+    except Exception as e:
+        # Если forward упал — пробуем отправить как текст
+        bot.send_message(ADMIN_ID, f"⚠️ Ошибка пересылки: {e}\n\nТекст сообщения: {message.text}")
     
-    # Отправляем ID отправителя
+    # --- ОТПРАВЛЯЕМ ID ОТПРАВИТЕЛЯ ---
     user_id = message.from_user.id
     username = message.from_user.username if message.from_user.username else "нет ника"
     bot.send_message(
@@ -27,6 +27,7 @@ def forward_to_admin(message):
         parse_mode='Markdown'
     )
     
+    # --- ОТВЕЧАЕМ ПОЛЬЗОВАТЕЛЮ ---
     bot.reply_to(message, "✅ Сообщение доставлено!")
 
 @bot.message_handler(commands=['reply'])

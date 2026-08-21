@@ -9,10 +9,24 @@ bot = telebot.TeleBot(TOKEN)
 # Пересылка сообщений от всех, КРОМЕ админа
 @bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
 def forward_to_admin(message):
-    # 1. Пересылаем само сообщение админу
-    bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
+    # --- ОТПРАВЛЯЕМ СОДЕРЖИМОЕ В ЗАВИСИМОСТИ ОТ ТИПА ---
+    if message.photo:
+        bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=message.caption)
+    elif message.video:
+        bot.send_video(ADMIN_ID, message.video.file_id, caption=message.caption)
+    elif message.document:
+        bot.send_document(ADMIN_ID, message.document.file_id, caption=message.caption)
+    elif message.audio:
+        bot.send_audio(ADMIN_ID, message.audio.file_id, caption=message.caption)
+    elif message.voice:
+        bot.send_voice(ADMIN_ID, message.voice.file_id)
+    elif message.text:
+        bot.send_message(ADMIN_ID, message.text)
+    else:
+        # Если что-то другое (стикеры, контакты, локации и т.д.)
+        bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
     
-    # 2. Отправляем отдельное сообщение с ID отправителя
+    # Отправляем ID отправителя
     user_id = message.from_user.id
     username = message.from_user.username if message.from_user.username else "нет ника"
     bot.send_message(
@@ -22,7 +36,7 @@ def forward_to_admin(message):
         parse_mode='Markdown'
     )
     
-    # 3. Отвечаем пользователю
+    # Отвечаем пользователю
     bot.reply_to(message, "✅ Сообщение доставлено!")
 
 # Команда для ответа пользователю (только для админа)

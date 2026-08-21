@@ -1,21 +1,28 @@
 import os
 import telebot
 
-# Берем секреты из переменных окружения
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))  # "0" - значение по умолчанию, если ID не найден
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
 
 bot = telebot.TeleBot(TOKEN)
 
-# Команда для проверки, что бот жив
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "Бот запущен и работает!")
-
-# Обработка всех остальных сообщений
+# Пересылка сообщений от всех, КРОМЕ админа
 @bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
 def forward_to_admin(message):
+    # 1. Пересылаем само сообщение админу
     bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
+    
+    # 2. Отправляем отдельное сообщение с ID отправителя
+    user_id = message.from_user.id
+    username = message.from_user.username if message.from_user.username else "нет ника"
+    bot.send_message(
+        ADMIN_ID,
+        f"👤 Отправитель:\n• ID: `{user_id}`\n• Username: @{username}\n\n"
+        f"Для ответа используй: /reply {user_id} [текст]",
+        parse_mode='Markdown'
+    )
+    
+    # 3. Отвечаем пользователю
     bot.reply_to(message, "✅ Сообщение доставлено!")
 
 # Команда для ответа пользователю (только для админа)
@@ -36,6 +43,11 @@ def reply_to_user(message):
     except Exception as e:
         bot.reply_to(message, f"❌ Ошибка: {e}")
 
+# Команда /start
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, "Привет! Пиши сюда, админ получит твое сообщение.")
+
 if __name__ == "__main__":
-    print("Бот запущен...")
+    print("🚀 Бот запущен...")
     bot.infinity_polling()

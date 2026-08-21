@@ -8,24 +8,14 @@ bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
 def forward_to_admin(message):
-    # --- ЛОГГИРУЕМ ТИП СООБЩЕНИЯ (для отладки) ---
+    # --- ЛОГГИРУЕМ ТИП СООБЩЕНИЯ ---
     print(f"Получено сообщение от {message.from_user.id}, тип: {message.content_type}")
     
-    # --- ОТПРАВЛЯЕМ СОДЕРЖИМОЕ В ЗАВИСИМОСТИ ОТ ТИПА ---
-    if message.content_type == 'photo':
-        bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=message.caption)
-    elif message.content_type == 'video':
-        bot.send_video(ADMIN_ID, message.video.file_id, caption=message.caption)
-    elif message.content_type == 'document':
-        bot.send_document(ADMIN_ID, message.document.file_id, caption=message.caption)
-    elif message.content_type == 'audio':
-        bot.send_audio(ADMIN_ID, message.audio.file_id, caption=message.caption)
-    elif message.content_type == 'voice':
-        bot.send_voice(ADMIN_ID, message.voice.file_id)
-    elif message.content_type == 'text':
-        bot.send_message(ADMIN_ID, message.text)
-    else:
-        # Если что-то другое (стикеры, контакты, локации и т.д.)
+    # --- ПЕРЕСЫЛАЕМ КОПИЮ СООБЩЕНИЯ (работает для всех типов) ---
+    try:
+        bot.copy_message(ADMIN_ID, message.chat.id, message.message_id)
+    except Exception as e:
+        # Если copy_message не сработал — пробуем forward_message
         bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
     
     # Отправляем ID отправителя

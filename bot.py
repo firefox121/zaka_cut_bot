@@ -6,21 +6,23 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
 
 bot = telebot.TeleBot(TOKEN)
 
-# Пересылка сообщений от всех, КРОМЕ админа
 @bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
 def forward_to_admin(message):
+    # --- ЛОГГИРУЕМ ТИП СООБЩЕНИЯ (для отладки) ---
+    print(f"Получено сообщение от {message.from_user.id}, тип: {message.content_type}")
+    
     # --- ОТПРАВЛЯЕМ СОДЕРЖИМОЕ В ЗАВИСИМОСТИ ОТ ТИПА ---
-    if message.photo:
+    if message.content_type == 'photo':
         bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=message.caption)
-    elif message.video:
+    elif message.content_type == 'video':
         bot.send_video(ADMIN_ID, message.video.file_id, caption=message.caption)
-    elif message.document:
+    elif message.content_type == 'document':
         bot.send_document(ADMIN_ID, message.document.file_id, caption=message.caption)
-    elif message.audio:
+    elif message.content_type == 'audio':
         bot.send_audio(ADMIN_ID, message.audio.file_id, caption=message.caption)
-    elif message.voice:
+    elif message.content_type == 'voice':
         bot.send_voice(ADMIN_ID, message.voice.file_id)
-    elif message.text:
+    elif message.content_type == 'text':
         bot.send_message(ADMIN_ID, message.text)
     else:
         # Если что-то другое (стикеры, контакты, локации и т.д.)
@@ -31,15 +33,12 @@ def forward_to_admin(message):
     username = message.from_user.username if message.from_user.username else "нет ника"
     bot.send_message(
         ADMIN_ID,
-        f"👤 Отправитель:\n• ID: `{user_id}`\n• Username: @{username}\n\n"
-        f"Для ответа используй: /reply {user_id} [текст]",
+        f"👤 Отправитель:\n• ID: `{user_id}`\n• Username: @{username}\n\nДля ответа используй: /reply {user_id} [текст]",
         parse_mode='Markdown'
     )
     
-    # Отвечаем пользователю
     bot.reply_to(message, "✅ Сообщение доставлено!")
 
-# Команда для ответа пользователю (только для админа)
 @bot.message_handler(commands=['reply'])
 def reply_to_user(message):
     if message.chat.id != ADMIN_ID:
@@ -57,7 +56,6 @@ def reply_to_user(message):
     except Exception as e:
         bot.reply_to(message, f"❌ Ошибка: {e}")
 
-# Команда /start
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.reply_to(message, "Привет! Пиши сюда, админ получит твое сообщение.")

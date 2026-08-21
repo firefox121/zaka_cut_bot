@@ -1,6 +1,7 @@
 from flask import Flask
 import threading
 import bot  # импортируем твой основной файл с ботом
+import os
 
 app = Flask(__name__)
 
